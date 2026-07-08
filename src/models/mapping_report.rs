@@ -16,7 +16,7 @@ pub struct MappingReport {
 impl MappingReport {
     pub fn new(source: &Path, summary: RelatorioMetricas, tree: FileNode) -> Self {
         Self {
-            source: source.display().to_string(),
+            source: display_path(source),
             generated_at: Local::now().to_rfc3339_opts(SecondsFormat::Secs, false),
             summary,
             tree,
@@ -30,6 +30,11 @@ impl MappingReport {
 
         Self::new(&source, summary, tree)
     }
+}
+
+fn display_path(path: &Path) -> String {
+    let rendered = path.display().to_string();
+    rendered.strip_prefix(r"\\?\").unwrap_or(&rendered).to_string()
 }
 
 #[cfg(test)]
@@ -81,5 +86,16 @@ mod tests {
                 .and_then(Value::as_u64),
             Some(1)
         );
+    }
+
+    #[test]
+    fn strips_windows_verbatim_prefix_from_source() {
+        let report = MappingReport::new(
+            std::path::Path::new(r"\\?\C:\Acervo"),
+            RelatorioMetricas::default(),
+            FileNode::directory("Acervo".to_string(), vec![]),
+        );
+
+        assert_eq!(report.source, r"C:\Acervo");
     }
 }

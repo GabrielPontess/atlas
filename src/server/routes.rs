@@ -1,68 +1,39 @@
+use axum::http::header;
 use axum::extract::State;
 use axum::response::Html;
 use axum::routing::get;
 use axum::{Json, Router};
 
 use crate::models::{FileNode, RelatorioMetricas};
+use crate::render::html::render_index;
 use crate::server::AppState;
 
 pub fn router(state: AppState) -> Router {
     Router::new()
         .route("/", get(index))
+        .route("/assets/style.css", get(style_css))
+        .route("/assets/app.js", get(app_js))
         .route("/api/tree", get(tree))
         .route("/api/summary", get(summary))
         .with_state(state)
 }
 
 async fn index(State(state): State<AppState>) -> Html<String> {
-    let report = &state.report;
+    Html(render_index(state.report.as_ref()))
+}
 
-    Html(format!(
-        "<!DOCTYPE html>\
-<html lang=\"pt-BR\">\
-<head>\
-  <meta charset=\"utf-8\">\
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
-  <title>Atlas Mapper</title>\
-  <style>\
-    body {{ font-family: Segoe UI, Arial, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }}\
-    main {{ max-width: 960px; margin: 0 auto; padding: 32px 20px 48px; }}\
-    .panel {{ background: #111827; border: 1px solid #334155; border-radius: 16px; padding: 20px; margin-top: 20px; }}\
-    h1, h2 {{ margin-top: 0; }}\
-    code {{ color: #93c5fd; }}\
-    ul {{ padding-left: 20px; }}\
-    a {{ color: #93c5fd; }}\
-  </style>\
-</head>\
-<body>\
-  <main>\
-    <h1>Atlas Mapper iniciado.</h1>\
-    <div class=\"panel\">\
-      <p><strong>Origem analisada:</strong><br><code>{}</code></p>\
-      <p><strong>Gerado em:</strong><br><code>{}</code></p>\
-    </div>\
-    <div class=\"panel\">\
-      <h2>Resumo inicial</h2>\
-      <ul>\
-        <li>Total de diretorios: {}</li>\
-        <li>Total de arquivos: {}</li>\
-      </ul>\
-    </div>\
-    <div class=\"panel\">\
-      <h2>Rotas disponiveis</h2>\
-      <ul>\
-        <li><a href=\"/api/tree\">/api/tree</a></li>\
-        <li><a href=\"/api/summary\">/api/summary</a></li>\
-      </ul>\
-    </div>\
-  </main>\
-</body>\
-</html>",
-        report.source,
-        report.generated_at,
-        report.summary.total_directories,
-        report.summary.total_files
-    ))
+async fn style_css() -> ([(axum::http::header::HeaderName, &'static str); 1], &'static str) {
+    (
+        [(header::CONTENT_TYPE, "text/css; charset=utf-8")],
+        include_str!("../assets/style.css"),
+    )
+}
+
+async fn app_js() -> ([(axum::http::header::HeaderName, &'static str); 1], &'static str) {
+    (
+        [(header::CONTENT_TYPE, "application/javascript; charset=utf-8")],
+        include_str!("../assets/app.js"),
+    )
 }
 
 async fn tree(State(state): State<AppState>) -> Json<FileNode> {
@@ -103,6 +74,32 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn asset_routes_return_ok() {
+        let css_response = test_router()
+            .oneshot(
+                Request::builder()
+                    .uri("/assets/style.css")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let js_response = test_router()
+            .oneshot(
+                Request::builder()
+                    .uri("/assets/app.js")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(css_response.status(), StatusCode::OK);
+        assert_eq!(js_response.status(), StatusCode::OK);
     }
 
     #[tokio::test]

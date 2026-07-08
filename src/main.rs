@@ -1,5 +1,6 @@
 mod cli;
 mod models;
+mod render;
 mod scanner;
 mod server;
 
