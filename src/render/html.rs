@@ -111,7 +111,7 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
 fn render_controls(asset_mode: &AssetMode) -> &'static str {
     match asset_mode {
         AssetMode::External => {
-            "<div class=\"downloads\"><a class=\"btn btn-link\" href=\"/download/html\">Baixar HTML</a><a class=\"btn btn-link\" href=\"/download/json\">Baixar JSON</a><a class=\"btn btn-link\" href=\"/download/markdown\">Baixar Markdown</a></div>"
+            "<div class=\"downloads\"><label class=\"export-label\" for=\"exportFormat\">Exportar como:</label><select class=\"export-select\" id=\"exportFormat\" onchange=\"if (this.value) { window.location.href = this.value; this.selectedIndex = 0; }\"><option value=\"\">Selecione um formato</option><option value=\"/download/html\">HTML</option><option value=\"/download/json\">JSON</option><option value=\"/download/markdown\">Markdown</option></select></div>"
         }
         AssetMode::Inline => {
             "<div class=\"downloads\"><span class=\"chip\">Arquivo standalone</span></div>"
