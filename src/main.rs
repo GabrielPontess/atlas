@@ -77,6 +77,9 @@ async fn run_serve(args: ServeArgs) {
             println!("{local_url}/");
             println!("{local_url}/api/tree");
             println!("{local_url}/api/summary");
+            println!("{local_url}/download/html");
+            println!("{local_url}/download/json");
+            println!("{local_url}/download/markdown");
 
             if let Err(error) = tokio::signal::ctrl_c().await {
                 eprintln!("Falha ao aguardar encerramento do servidor: {error}");

@@ -148,6 +148,13 @@ h2 {
   margin: 18px 0;
 }
 
+.downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px 0;
+}
+
 .btn,
 .search {
   border-radius: 10px;
@@ -168,6 +175,13 @@ h2 {
   border-color: var(--line-strong);
   background: #f0f0f0;
   transform: translateY(-1px);
+}
+
+.btn-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .btn:focus-visible,

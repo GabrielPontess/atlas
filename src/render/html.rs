@@ -1,11 +1,38 @@
 use crate::models::MappingReport;
 
+const STYLE_CSS: &str = include_str!("../assets/style.css");
+const APP_JS: &str = include_str!("../assets/app.js");
+
 pub fn render_index(report: &MappingReport) -> String {
+    render_html_page(report, AssetMode::External)
+}
+
+pub fn render_standalone(report: &MappingReport) -> String {
+    render_html_page(report, AssetMode::Inline)
+}
+
+enum AssetMode {
+    External,
+    Inline,
+}
+
+fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
     let tree_json = json_for_script_tag(&report.tree);
     let title = format!(
         "Mapeamento do Diretorio <code>{}</code>",
         escape_html(&report.source)
     );
+    let head_assets = match asset_mode {
+        AssetMode::External => {
+            "<link rel=\"stylesheet\" href=\"/assets/style.css\">".to_string()
+        }
+        AssetMode::Inline => format!("<style>{STYLE_CSS}</style>"),
+    };
+    let script_assets = match asset_mode {
+        AssetMode::External => "<script src=\"/assets/app.js\"></script>".to_string(),
+        AssetMode::Inline => format!("<script>{APP_JS}</script>"),
+    };
+    let downloads = render_download_controls();
 
     format!(
         "<!DOCTYPE html>\
@@ -14,7 +41,7 @@ pub fn render_index(report: &MappingReport) -> String {
   <meta charset=\"utf-8\">\
   <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\
   <title>Atlas Mapper</title>\
-  <link rel=\"stylesheet\" href=\"/assets/style.css\">\
+  {}\
 </head>\
 <body>\
   <div class=\"layout\">\
@@ -36,6 +63,7 @@ pub fn render_index(report: &MappingReport) -> String {
         <button class=\"btn\" id=\"expandAll\" type=\"button\">Expandir tudo</button>\
         <button class=\"btn\" id=\"collapseAll\" type=\"button\">Recolher tudo</button>\
       </div>\
+      {}\
       <div class=\"stats\">\
         <div class=\"stat-card\">\
           <span class=\"stat-label\">Pastas</span>\
@@ -64,17 +92,24 @@ pub fn render_index(report: &MappingReport) -> String {
     </main>\
   </div>\
   <script id=\"tree-data\" type=\"application/json\">{}</script>\
-  <script src=\"/assets/app.js\"></script>\
+  {}\
 </body>\
 </html>",
+        head_assets,
         escape_html(&report.source),
         escape_html(&report.generated_at),
+        downloads,
         report.summary.total_directories,
         report.summary.total_files,
         render_extensions(&report.summary.by_extension),
         title,
-        tree_json
+        tree_json,
+        script_assets
     )
+}
+
+fn render_download_controls() -> &'static str {
+    "<div class=\"downloads\"><a class=\"btn btn-link\" href=\"/download/html\">Baixar HTML</a><a class=\"btn btn-link\" href=\"/download/json\">Baixar JSON</a><a class=\"btn btn-link\" href=\"/download/markdown\">Baixar Markdown</a></div>"
 }
 
 fn render_extensions(extensions: &std::collections::BTreeMap<String, u64>) -> String {
@@ -132,5 +167,6 @@ mod tests {
         assert!(html.contains("id=\"treeRoot\""));
         assert!(html.contains("id=\"tree-data\""));
         assert!(html.contains("Expandir tudo"));
+        assert!(html.contains("/download/json"));
     }
 }
