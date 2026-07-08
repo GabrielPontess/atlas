@@ -1,26 +1,50 @@
+mod cli;
 mod models;
 mod scanner;
 
-use std::env;
-use std::path::PathBuf;
 use std::process;
 
+use cli::{Cli, Commands, ServeArgs, validate_input_directory};
 use scanner::scan_directory;
 
 fn main() {
-    let input = resolve_input_path();
+    let cli = Cli::parse_args();
 
-    match scan_directory(&input) {
+    match cli.command {
+        Commands::Serve(args) => run_serve(args),
+    }
+}
+
+fn run_serve(args: ServeArgs) {
+    if let Err(message) = validate_input_directory(&args.input) {
+        eprintln!("Erro: {message}");
+        process::exit(1);
+    }
+
+    match scan_directory(&args.input) {
         Ok((_tree, metrics)) => {
             println!("Atlas scanner finalizado.");
-            println!("Origem analisada: {}", input.display());
+            println!();
+            println!("Origem analisada:");
+            println!("{}", args.input.display());
+            println!();
+            println!("Porta configurada:");
+            println!("{}", args.port);
+
+            if args.open {
+                println!();
+                println!("Abertura automatica do navegador: habilitada");
+            }
+
+            println!();
+            println!("Metricas iniciais:");
             println!("Diretorios: {}", metrics.total_directories);
             println!("Arquivos: {}", metrics.total_files);
 
             if metrics.by_extension.is_empty() {
-                println!("Extensões: nenhuma encontrada");
+                println!("Extensoes: nenhuma encontrada");
             } else {
-                println!("Extensões:");
+                println!("Extensoes:");
                 for (extension, count) in &metrics.by_extension {
                     println!("  {extension}: {count}");
                 }
@@ -29,16 +53,9 @@ fn main() {
         Err(error) => {
             eprintln!(
                 "Falha ao mapear o diretorio '{}': {error}",
-                input.display()
+                args.input.display()
             );
             process::exit(1);
         }
     }
-}
-
-fn resolve_input_path() -> PathBuf {
-    env::args_os()
-        .nth(1)
-        .map(PathBuf::from)
-        .unwrap_or_else(|| env::current_dir().expect("Não foi possível obter o diretório atual"))
 }
