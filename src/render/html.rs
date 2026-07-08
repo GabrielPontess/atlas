@@ -46,39 +46,41 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
 <body>\
   <div class=\"layout\">\
     <aside class=\"panel sidebar\">\
-      <h1>Atlas Mapper</h1>\
-      <p class=\"subtitle\">Visualizacao tecnica interativa da arvore de diretorios e arquivos mapeada pelo live server local do projeto Atlas.</p>\
-      <div class=\"meta-list\">\
-        <div class=\"meta-item\">\
-          <span class=\"meta-label\">Origem analisada</span>\
-          <p class=\"meta-value\"><code>{}</code></p>\
+      <div class=\"sidebar-body\">\
+        <h1>Atlas</h1>\
+        <p class=\"subtitle\">Visualizacao tecnica interativa da arvore de diretorios e arquivos.</p>\
+        <div class=\"meta-list\">\
+          <div class=\"meta-item\">\
+            <span class=\"meta-label\">Origem analisada</span>\
+            <p class=\"meta-value\"><code>{}</code></p>\
+          </div>\
+          <div class=\"meta-item\">\
+            <span class=\"meta-label\">Data de geracao</span>\
+            <p class=\"meta-value\"><code>{}</code></p>\
+          </div>\
         </div>\
-        <div class=\"meta-item\">\
-          <span class=\"meta-label\">Data de geracao</span>\
-          <p class=\"meta-value\"><code>{}</code></p>\
+        <input id=\"search\" class=\"search\" type=\"search\" placeholder=\"Buscar pasta ou arquivo...\">\
+        <div class=\"controls\">\
+          <button class=\"btn\" id=\"expandAll\" type=\"button\">Expandir tudo</button>\
+          <button class=\"btn\" id=\"collapseAll\" type=\"button\">Recolher tudo</button>\
         </div>\
-      </div>\
-      <input id=\"search\" class=\"search\" type=\"search\" placeholder=\"Buscar pasta ou arquivo...\">\
-      <div class=\"controls\">\
-        <button class=\"btn\" id=\"expandAll\" type=\"button\">Expandir tudo</button>\
-        <button class=\"btn\" id=\"collapseAll\" type=\"button\">Recolher tudo</button>\
-      </div>\
-      {}\
-      <div class=\"stats\">\
-        <div class=\"stat-card\">\
-          <span class=\"stat-label\">Pastas</span>\
-          <span class=\"stat-value\">{}</span>\
+        {}\
+        <div class=\"stats\">\
+          <div class=\"stat-card\">\
+            <span class=\"stat-label\">Pastas</span>\
+            <span class=\"stat-value\">{}</span>\
+          </div>\
+          <div class=\"stat-card\">\
+            <span class=\"stat-label\">Arquivos</span>\
+            <span class=\"stat-value\">{}</span>\
+          </div>\
         </div>\
-        <div class=\"stat-card\">\
-          <span class=\"stat-label\">Arquivos</span>\
-          <span class=\"stat-value\">{}</span>\
+        <div class=\"legend\">\
+          <span class=\"chip\"><span class=\"dot folder\"></span>Pastas</span>\
+          <span class=\"chip\"><span class=\"dot file\"></span>Arquivos</span>\
         </div>\
+        {}\
       </div>\
-      <div class=\"legend\">\
-        <span class=\"chip\"><span class=\"dot folder\"></span>Pastas</span>\
-        <span class=\"chip\"><span class=\"dot file\"></span>Arquivos</span>\
-      </div>\
-      {}\
       <p class=\"footer-note\">A arvore e navegavel por niveis. Use a busca para filtrar nomes e localizar rapidamente projetos, pastas tecnicas ou arquivos especificos.</p>\
     </aside>\
     <main class=\"panel content\">\
