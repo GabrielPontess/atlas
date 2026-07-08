@@ -32,7 +32,7 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
         AssetMode::External => "<script src=\"/assets/app.js\"></script>".to_string(),
         AssetMode::Inline => format!("<script>{APP_JS}</script>"),
     };
-    let downloads = render_download_controls();
+    let controls = render_controls(&asset_mode);
 
     format!(
         "<!DOCTYPE html>\
@@ -98,7 +98,7 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
         head_assets,
         escape_html(&report.source),
         escape_html(&report.generated_at),
-        downloads,
+        controls,
         report.summary.total_directories,
         report.summary.total_files,
         render_extensions(&report.summary.by_extension),
@@ -108,8 +108,15 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
     )
 }
 
-fn render_download_controls() -> &'static str {
-    "<div class=\"downloads\"><a class=\"btn btn-link\" href=\"/download/html\">Baixar HTML</a><a class=\"btn btn-link\" href=\"/download/json\">Baixar JSON</a><a class=\"btn btn-link\" href=\"/download/markdown\">Baixar Markdown</a></div>"
+fn render_controls(asset_mode: &AssetMode) -> &'static str {
+    match asset_mode {
+        AssetMode::External => {
+            "<div class=\"downloads\"><a class=\"btn btn-link\" href=\"/download/html\">Baixar HTML</a><a class=\"btn btn-link\" href=\"/download/json\">Baixar JSON</a><a class=\"btn btn-link\" href=\"/download/markdown\">Baixar Markdown</a></div>"
+        }
+        AssetMode::Inline => {
+            "<div class=\"downloads\"><span class=\"chip\">Arquivo standalone</span></div>"
+        }
+    }
 }
 
 fn render_extensions(extensions: &std::collections::BTreeMap<String, u64>) -> String {
@@ -151,7 +158,7 @@ fn json_for_script_tag<T: serde::Serialize>(value: &T) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::render_index;
+    use super::{render_index, render_standalone};
     use crate::models::{FileNode, MappingReport, RelatorioMetricas};
 
     #[test]
@@ -168,5 +175,22 @@ mod tests {
         assert!(html.contains("id=\"tree-data\""));
         assert!(html.contains("Expandir tudo"));
         assert!(html.contains("/download/json"));
+    }
+
+    #[test]
+    fn renders_standalone_without_external_dependencies() {
+        let report = MappingReport::new(
+            std::path::Path::new("D:/Acervo"),
+            RelatorioMetricas::default(),
+            FileNode::directory("Acervo".to_string(), vec![]),
+        );
+
+        let html = render_standalone(&report);
+
+        assert!(html.contains("<style>"));
+        assert!(html.contains("<script>"));
+        assert!(!html.contains("/assets/style.css"));
+        assert!(!html.contains("/assets/app.js"));
+        assert!(!html.contains("/download/json"));
     }
 }
