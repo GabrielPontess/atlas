@@ -1,22 +1,25 @@
 mod cli;
 mod models;
 mod scanner;
+mod server;
 
 use std::process;
 
 use cli::{Cli, Commands, ServeArgs, validate_input_directory};
 use models::MappingReport;
 use scanner::scan_directory;
+use server::run as run_server;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let cli = Cli::parse_args();
 
     match cli.command {
-        Commands::Serve(args) => run_serve(args),
+        Commands::Serve(args) => run_serve(args).await,
     }
 }
 
-fn run_serve(args: ServeArgs) {
+async fn run_serve(args: ServeArgs) {
     if let Err(message) = validate_input_directory(&args.input) {
         eprintln!("Erro: {message}");
         process::exit(1);
@@ -25,8 +28,16 @@ fn run_serve(args: ServeArgs) {
     match scan_directory(&args.input) {
         Ok((tree, metrics)) => {
             let report = MappingReport::from_scan(&args.input, tree, metrics);
+            let local_address = match run_server(report.clone(), args.port).await {
+                Ok(address) => address,
+                Err(error) => {
+                    eprintln!("Falha ao iniciar o servidor local: {error}");
+                    process::exit(1);
+                }
+            };
+            let local_url = format!("http://{local_address}");
 
-            println!("Atlas scanner finalizado.");
+            println!("Atlas Mapper iniciado.");
             println!();
             println!("Origem analisada:");
             println!("{}", report.source);
@@ -34,10 +45,14 @@ fn run_serve(args: ServeArgs) {
             println!("Data de geracao:");
             println!("{}", report.generated_at);
             println!();
-            println!("Porta configurada:");
-            println!("{}", args.port);
+            println!("Servidor local:");
+            println!("{local_url}");
 
             if args.open {
+                if let Err(error) = open::that(&local_url) {
+                    eprintln!("Falha ao abrir o navegador automaticamente: {error}");
+                }
+
                 println!();
                 println!("Abertura automatica do navegador: habilitada");
             }
@@ -54,6 +69,17 @@ fn run_serve(args: ServeArgs) {
                 for (extension, count) in &report.summary.by_extension {
                     println!("  {extension}: {count}");
                 }
+            }
+
+            println!();
+            println!("Rotas disponiveis:");
+            println!("{local_url}/");
+            println!("{local_url}/api/tree");
+            println!("{local_url}/api/summary");
+
+            if let Err(error) = tokio::signal::ctrl_c().await {
+                eprintln!("Falha ao aguardar encerramento do servidor: {error}");
+                process::exit(1);
             }
         }
         Err(error) => {
