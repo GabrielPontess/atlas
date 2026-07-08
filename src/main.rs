@@ -5,6 +5,7 @@ mod scanner;
 use std::process;
 
 use cli::{Cli, Commands, ServeArgs, validate_input_directory};
+use models::MappingReport;
 use scanner::scan_directory;
 
 fn main() {
@@ -22,11 +23,16 @@ fn run_serve(args: ServeArgs) {
     }
 
     match scan_directory(&args.input) {
-        Ok((_tree, metrics)) => {
+        Ok((tree, metrics)) => {
+            let report = MappingReport::from_scan(&args.input, tree, metrics);
+
             println!("Atlas scanner finalizado.");
             println!();
             println!("Origem analisada:");
-            println!("{}", args.input.display());
+            println!("{}", report.source);
+            println!();
+            println!("Data de geracao:");
+            println!("{}", report.generated_at);
             println!();
             println!("Porta configurada:");
             println!("{}", args.port);
@@ -38,14 +44,14 @@ fn run_serve(args: ServeArgs) {
 
             println!();
             println!("Metricas iniciais:");
-            println!("Diretorios: {}", metrics.total_directories);
-            println!("Arquivos: {}", metrics.total_files);
+            println!("Diretorios: {}", report.summary.total_directories);
+            println!("Arquivos: {}", report.summary.total_files);
 
-            if metrics.by_extension.is_empty() {
+            if report.summary.by_extension.is_empty() {
                 println!("Extensoes: nenhuma encontrada");
             } else {
                 println!("Extensoes:");
-                for (extension, count) in &metrics.by_extension {
+                for (extension, count) in &report.summary.by_extension {
                     println!("  {extension}: {count}");
                 }
             }

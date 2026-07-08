@@ -1,9 +1,14 @@
 use std::collections::BTreeMap;
 
-#[derive(Debug, Default, Clone, PartialEq, Eq)]
+use serde::Serialize;
+
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize)]
 pub struct RelatorioMetricas {
+    #[serde(rename = "total_files")]
     pub total_files: u64,
+    #[serde(rename = "total_directories")]
     pub total_directories: u64,
+    #[serde(rename = "extensions")]
     pub by_extension: BTreeMap<String, u64>,
 }
 
