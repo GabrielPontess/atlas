@@ -75,6 +75,7 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
             <span class=\"stat-value\">{}</span>\
           </div>\
         </div>\
+        {}\
         <div class=\"legend\">\
           <span class=\"chip\"><span class=\"dot folder\"></span>Pastas</span>\
           <span class=\"chip\"><span class=\"dot file\"></span>Arquivos</span>\
@@ -103,10 +104,38 @@ fn render_html_page(report: &MappingReport, asset_mode: AssetMode) -> String {
         controls,
         report.summary.total_directories,
         report.summary.total_files,
+        render_warning_summary(report),
         render_extensions(&report.summary.by_extension),
         title,
         tree_json,
         script_assets
+    )
+}
+
+fn render_warning_summary(report: &MappingReport) -> String {
+    if report.summary.warning_count == 0 {
+        return String::new();
+    }
+
+    let items = report
+        .warnings
+        .iter()
+        .map(|warning| {
+            format!(
+                "<li><strong>{}</strong><code>{}</code><span>{}</span></li>",
+                escape_html(&warning.kind),
+                escape_html(&warning.path),
+                escape_html(&warning.message)
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("");
+
+    format!(
+        "<div class=\"warnings\"><h2>Avisos</h2><div class=\"warning-summary\"><span class=\"chip\">Itens ignorados: {}</span><span class=\"chip\">Avisos: {}</span></div><ul class=\"warning-list\">{}</ul></div>",
+        report.summary.ignored_items,
+        report.summary.warning_count,
+        items
     )
 }
 
@@ -177,6 +206,27 @@ mod tests {
         assert!(html.contains("id=\"tree-data\""));
         assert!(html.contains("Expandir tudo"));
         assert!(html.contains("/download/json"));
+    }
+
+    #[test]
+    fn renders_warning_summary_when_present() {
+        let mut summary = RelatorioMetricas::default();
+        summary.register_warning();
+        let report = MappingReport::with_warnings(
+            std::path::Path::new("D:/Acervo"),
+            summary,
+            FileNode::directory("Acervo".to_string(), vec![]),
+            vec![crate::models::ScanWarning::new(
+                "D:/Acervo/Restrito".to_string(),
+                "read_directory",
+                "denied".to_string(),
+            )],
+        );
+
+        let html = render_index(&report);
+
+        assert!(html.contains("Itens ignorados: 1"));
+        assert!(html.contains("read_directory"));
     }
 
     #[test]

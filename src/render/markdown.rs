@@ -17,6 +17,14 @@ pub fn render_markdown(report: &MappingReport) -> String {
         "- **Total de Arquivos:** {}\n\n",
         report.summary.total_files
     ));
+    output.push_str(&format!(
+        "- **Itens ignorados:** {}\n",
+        report.summary.ignored_items
+    ));
+    output.push_str(&format!(
+        "- **Avisos registrados:** {}\n\n",
+        report.summary.warning_count
+    ));
     output.push_str("### Quantitativo por Extensao/Formato\n\n");
     output.push_str("| Extensao / Formato | Quantidade de Arquivos |\n");
     output.push_str("| :--- | ---: |\n");
@@ -26,6 +34,16 @@ pub fn render_markdown(report: &MappingReport) -> String {
     } else {
         for (extension, count) in &report.summary.by_extension {
             output.push_str(&format!("| `{}` | {} |\n", extension, count));
+        }
+    }
+
+    if !report.warnings.is_empty() {
+        output.push_str("\n### Avisos de leitura\n\n");
+        for warning in &report.warnings {
+            output.push_str(&format!(
+                "- **{}** em `{}`: {}\n",
+                warning.kind, warning.path, warning.message
+            ));
         }
     }
 

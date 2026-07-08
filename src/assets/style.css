@@ -252,6 +252,44 @@ summary:focus-visible {
   margin-top: 16px;
 }
 
+.warnings {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.warning-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.warning-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-height: min(18dvh, 180px);
+  overflow: auto;
+}
+
+.warning-list li {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f7f7 100%);
+  font-size: 12px;
+}
+
+.warning-list strong {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 11px;
+}
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -644,6 +682,10 @@ code {
 
   .extensions-list {
     max-height: min(24rem, 28dvh);
+  }
+
+  .warning-list {
+    max-height: min(16rem, 22dvh);
   }
 }
 

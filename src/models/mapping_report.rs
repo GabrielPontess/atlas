@@ -3,7 +3,7 @@ use std::path::Path;
 use chrono::{Local, SecondsFormat};
 use serde::Serialize;
 
-use crate::models::{FileNode, RelatorioMetricas};
+use crate::models::{FileNode, RelatorioMetricas, ScanWarning};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct MappingReport {
@@ -11,24 +11,42 @@ pub struct MappingReport {
     pub generated_at: String,
     pub summary: RelatorioMetricas,
     pub tree: FileNode,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<ScanWarning>,
 }
 
 impl MappingReport {
+    #[cfg_attr(not(test), allow(dead_code))]
     pub fn new(source: &Path, summary: RelatorioMetricas, tree: FileNode) -> Self {
+        Self::with_warnings(source, summary, tree, Vec::new())
+    }
+
+    pub fn with_warnings(
+        source: &Path,
+        summary: RelatorioMetricas,
+        tree: FileNode,
+        warnings: Vec<ScanWarning>,
+    ) -> Self {
         Self {
             source: display_path(source),
             generated_at: Local::now().to_rfc3339_opts(SecondsFormat::Secs, false),
             summary,
             tree,
+            warnings,
         }
     }
 
-    pub fn from_scan(source: &Path, tree: FileNode, summary: RelatorioMetricas) -> Self {
+    pub fn from_scan(
+        source: &Path,
+        tree: FileNode,
+        summary: RelatorioMetricas,
+        warnings: Vec<ScanWarning>,
+    ) -> Self {
         let source = source
             .canonicalize()
             .unwrap_or_else(|_| source.to_path_buf());
 
-        Self::new(&source, summary, tree)
+        Self::with_warnings(&source, summary, tree, warnings)
     }
 }
 
@@ -86,6 +104,8 @@ mod tests {
                 .and_then(Value::as_u64),
             Some(1)
         );
+        assert_eq!(summary.get("ignored_items").and_then(Value::as_u64), Some(0));
+        assert_eq!(summary.get("warning_count").and_then(Value::as_u64), Some(0));
     }
 
     #[test]

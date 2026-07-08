@@ -8,6 +8,10 @@ pub struct RelatorioMetricas {
     pub total_files: u64,
     #[serde(rename = "total_directories")]
     pub total_directories: u64,
+    #[serde(rename = "ignored_items")]
+    pub ignored_items: u64,
+    #[serde(rename = "warning_count")]
+    pub warning_count: u64,
     #[serde(rename = "extensions")]
     pub by_extension: BTreeMap<String, u64>,
 }
@@ -22,5 +26,10 @@ impl RelatorioMetricas {
 
         let key = extension.unwrap_or("[sem extensao]");
         *self.by_extension.entry(key.to_string()).or_insert(0) += 1;
+    }
+
+    pub fn register_warning(&mut self) {
+        self.warning_count += 1;
+        self.ignored_items += 1;
     }
 }

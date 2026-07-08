@@ -27,8 +27,13 @@ async fn run_serve(args: ServeArgs) {
     }
 
     match scan_directory(&args.input) {
-        Ok((tree, metrics)) => {
-            let report = MappingReport::from_scan(&args.input, tree, metrics);
+        Ok(scan_result) => {
+            let report = MappingReport::from_scan(
+                &args.input,
+                scan_result.tree,
+                scan_result.metrics,
+                scan_result.warnings,
+            );
             let local_address = match run_server(report.clone(), args.port).await {
                 Ok(address) => address,
                 Err(error) => {
@@ -69,6 +74,19 @@ async fn run_serve(args: ServeArgs) {
                 println!("Extensoes:");
                 for (extension, count) in &report.summary.by_extension {
                     println!("  {extension}: {count}");
+                }
+            }
+
+            if report.summary.warning_count > 0 {
+                println!();
+                println!("Avisos de leitura: {}", report.summary.warning_count);
+                println!("Itens ignorados: {}", report.summary.ignored_items);
+
+                for warning in &report.warnings {
+                    eprintln!(
+                        "[aviso:{}] {} -> {}",
+                        warning.kind, warning.path, warning.message
+                    );
                 }
             }
 
