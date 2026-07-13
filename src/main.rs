@@ -1,47 +1,42 @@
+mod app;
 mod cli;
 mod models;
 mod render;
 mod scanner;
 mod server;
+mod tui;
 
 use std::process;
 
-use cli::{Cli, Commands, ServeArgs, validate_input_directory};
-use models::MappingReport;
-use scanner::scan_directory;
-use server::run as run_server;
+use app::{SessionConfig, start_session};
+use cli::{Cli, Commands, ServeArgs};
 
 #[tokio::main]
 async fn main() {
     let cli = Cli::parse_args();
 
     match cli.command {
-        Commands::Serve(args) => run_serve(args).await,
+        Some(Commands::Serve(args)) => run_serve(args).await,
+        None => {
+            if let Err(error) = tui::run(tokio::runtime::Handle::current().clone()) {
+                eprintln!("Falha ao iniciar a TUI: {error}");
+                process::exit(1);
+            }
+        }
     }
 }
 
 async fn run_serve(args: ServeArgs) {
-    if let Err(message) = validate_input_directory(&args.input) {
-        eprintln!("Erro: {message}");
-        process::exit(1);
-    }
+    let config = SessionConfig {
+        input: args.input,
+        port: args.port,
+        open_browser: args.open,
+    };
 
-    match scan_directory(&args.input) {
-        Ok(scan_result) => {
-            let report = MappingReport::from_scan(
-                &args.input,
-                scan_result.tree,
-                scan_result.metrics,
-                scan_result.warnings,
-            );
-            let local_address = match run_server(report.clone(), args.port).await {
-                Ok(address) => address,
-                Err(error) => {
-                    eprintln!("Falha ao iniciar o servidor local: {error}");
-                    process::exit(1);
-                }
-            };
-            let local_url = format!("http://{local_address}");
+    match start_session(&config).await {
+        Ok(session) => {
+            let local_url = session.local_url;
+            let report = session.report;
 
             println!("Atlas Mapper iniciado.");
             println!();
@@ -54,13 +49,12 @@ async fn run_serve(args: ServeArgs) {
             println!("Servidor local:");
             println!("{local_url}");
 
-            if args.open {
-                if let Err(error) = open::that(&local_url) {
-                    eprintln!("Falha ao abrir o navegador automaticamente: {error}");
-                }
-
+            if config.open_browser {
                 println!();
                 println!("Abertura automatica do navegador: habilitada");
+                if let Some(error) = session.browser_error {
+                    eprintln!("Falha ao abrir o navegador automaticamente: {error}");
+                }
             }
 
             println!();
@@ -105,10 +99,7 @@ async fn run_serve(args: ServeArgs) {
             }
         }
         Err(error) => {
-            eprintln!(
-                "Falha ao mapear o diretorio '{}': {error}",
-                args.input.display()
-            );
+            eprintln!("Erro: {error}");
             process::exit(1);
         }
     }

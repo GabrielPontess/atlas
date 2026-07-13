@@ -10,7 +10,7 @@ const DEFAULT_PORT: u16 = 8787;
 #[command(about = "Mapeia acervos documentais e prepara a visualizacao local")]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
 }
 
 #[derive(Debug, Subcommand)]
